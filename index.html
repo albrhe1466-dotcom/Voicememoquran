@@ -2,564 +2,192 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Qur’an Recorder • Ayāt</title>
+  <title>مشغل القرآن</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    :root{
-      --bg-dark:#0a0d12;
-      --accent-green:#18a058;
-      --accent-pink:#ff6ec7;
-      --accent-gold:#ffd166;
-      --glow:#b6fff4;
-      --red:#e04141;
-      --green:#15b66a;
-      --text:#e9f0f3;
-      --muted:#a6b3bd;
-      --yellow:#e3b341;
-      --blue:#3ea0e8;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Naskh Arabic","Amiri",sans-serif}
-    body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;overflow:hidden}
-
-    .stage{
-      position:relative;
-      width:min(980px,94vw);
-      height:min(560px,72vh);
-      border-radius:24px;
-      background:
-        radial-gradient(1200px 600px at 10% 120%, rgba(24,160,88,0.18), transparent 60%),
-        radial-gradient(900px 500px at 90% -20%, rgba(255,110,199,0.18), transparent 60%),
-        linear-gradient(180deg, #0b0e14 0%, #0a0d12 100%);
-      box-shadow:0 30px 120px rgba(0,0,0,0.5), inset 0 0 40px rgba(255,255,255,0.06);
-      overflow:hidden;
+    body {
+      margin: 0;
+      padding-left: 90px;
+      font-family: "Tahoma", Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      direction: rtl;
     }
 
-    canvas#particles{position:absolute; inset:0; width:100%; height:100%; filter:brightness(1.1) contrast(1.05); pointer-events:none;}
-
-    .emblem{position:absolute; inset:0; display:grid; place-items:center; transition:opacity 320ms ease, transform 320ms ease;}
-    .badge{position:relative; width:min(300px,40vw); aspect-ratio:1/1.1; display:grid; place-items:center; filter:drop-shadow(0 14px 30px rgba(0,0,0,0.45)); cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;}
-
-    .plate{position:absolute; inset:0; border-radius:42% 42% 50% 50% / 44% 44% 56% 56%;
-      background:
-        radial-gradient(120% 100% at 50% 60%, rgba(255,255,255,0.12), transparent 60%),
-        radial-gradient(100% 80% at 50% 35%, rgba(255,255,255,0.10), transparent 60%),
-        conic-gradient(from -10deg, #0f3d29, #1b6f4a, #1ea463, #168d55, #0f3d29);
-      border:1.4px solid rgba(255,255,255,0.16);
-      box-shadow: inset 0 0 18px rgba(255,255,255,0.08), inset 0 -18px 36px rgba(0,0,0,0.35);
+    /* الشريط الجانبي الأيمن */
+    .quran-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: 100px;
+      background: #020617;
+      box-shadow: -5px 0 30px rgba(0, 255, 204, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 6px;
+      gap: 10px;
+      z-index: 9999;
     }
-    .wing{position:absolute; top:10%; width:48%; height:40%; filter:drop-shadow(0 6px 10px rgba(255,255,255,0.12));
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(240,244,255,0.65));
-      clip-path:polygon(0% 50%, 10% 40%, 20% 35%, 45% 25%, 80% 15%, 100% 0%, 100% 100%, 70% 90%, 40% 85%, 15% 80%, 4% 70%);
-      opacity:0.92; mix-blend-mode:screen;}
-    .wing.left{left:-6% ; transform:scaleX(1) rotate(-3deg)}
-    .wing.right{right:-6%; transform:scaleX(-1) rotate(3deg)}
-    .crest{position:absolute; top:-6%; width:28%; aspect-ratio:1/1.2;
-      background: radial-gradient(85% 95% at 50% 20%, rgba(255,255,255,0.85), transparent 50%), conic-gradient(from 0deg, #ffd166, #ffe49f, #ffd166);
-      clip-path:polygon(50% 0%, 62% 22%, 100% 30%, 72% 50%, 82% 100%, 50% 72%, 18% 100%, 28% 50%, 0% 30%, 38% 22%);
-      box-shadow:0 10px 18px rgba(255,209,102,0.35); mix-blend-mode:screen;}
-    .mic{position:relative; width:40%; aspect-ratio:3/4; display:grid; place-items:center; z-index:2;
-      background: radial-gradient(120% 100% at 50% 20%, rgba(255,255,255,0.16), transparent 62%), linear-gradient(180deg, #1b1f27 0%, #2b3240 60%, #1b1f27 100%);
-      border-radius:22px; border:1.2px solid rgba(255,255,255,0.12); box-shadow:inset 0 0 18px rgba(255,255,255,0.06);}
-    .mic::before{content:""; width:46%; height:50%; border-radius:12px; background:
-      radial-gradient(140% 120% at 50% 30%, rgba(255,255,255,0.12), transparent 60%), linear-gradient(180deg, #383f4e 0%, #4a5366 100%);
-      box-shadow:inset 0 0 22px rgba(0,0,0,0.45);}
-    .mic::after{content:""; position:absolute; bottom:-14%; width:60%; height:18%; border-radius:18px; background:linear-gradient(180deg, #333a49 0%, #171b22 100%); border:1px solid rgba(255,255,255,0.12); box-shadow:inset 0 0 12px rgba(255,255,255,0.06);}
 
-    .halo{position:absolute; inset:0; pointer-events:none;
-      background:
-        radial-gradient(4px 4px at 30% 60%, rgba(255,255,255,0.85), transparent 40%),
-        radial-gradient(3px 3px at 70% 40%, rgba(255,255,255,0.75), transparent 40%),
-        radial-gradient(3px 3px at 50% 80%, rgba(255,255,255,0.85), transparent 40%),
-        radial-gradient(2px 2px at 55% 55%, rgba(255,255,255,0.65), transparent 40%);
-      opacity:0.65; mix-blend-mode:screen; transition:opacity 240ms ease;}
-
-    .title{position:absolute; bottom:-10%; width:100%; text-align:center; font-weight:600; letter-spacing:0.2px; color:var(--text); text-shadow:0 3px 12px rgba(0,0,0,0.5), 0 0 8px rgba(255,255,255,0.08);}
-
-    .controls{position:absolute; bottom:16px; left:16px; right:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; backdrop-filter:blur(6px);
-      padding:10px 12px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.08);}
-    select, button{background:#12161d; color:var(--text); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:10px 12px; font-size:14px; box-shadow:0 6px 16px rgba(0,0,0,0.25);}
-    .meter{display:flex; align-items:center; gap:8px; color:var(--muted);}
-    .bar{width:160px; height:10px; border-radius:6px; background:#10141a; overflow:hidden; border:1px solid rgba(255,255,255,0.08);}
-    .bar > span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--accent-pink), var(--accent-green)); transition:width 100ms linear;}
-
-    .screen{position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 220ms ease;}
-    .screen.green{ background:linear-gradient(180deg, rgba(21,182,106,0.85), rgba(8,68,40,0.9));}
-    .screen.red  { background:linear-gradient(180deg, rgba(224,65,65,0.85), rgba(90,18,18,0.9));}
-    .screen.show{ opacity:1 }
-    .screen .msg{position:absolute; inset:0; display:grid; place-items:center; text-align:center; color:white; text-shadow:0 2px 10px rgba(0,0,0,0.6); padding:20px; font-weight:600;}
-    .screen .sub{margin-top:6px; font-size:14px; color:#f0f6f9; opacity:0.85; font-weight:500;}
-
-    .emblem.fade{ opacity:0.2; transform:scale(0.98) }
-    .halo.hide{ opacity:0 }
-
-    .hint{font-size:13px; color:var(--muted); text-align:center; margin-top:4px;}
-
-    /* Results panel */
-    .results{
-      position:absolute; top:12px; left:12px; right:12px;
-      display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;
-      background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.03));
-      border:1px solid rgba(255,255,255,0.08);
-      border-radius:14px; padding:12px;
+    .title {
+      font-size: 12px;
+      opacity: 0.85;
+      text-align: center;
     }
-    .card{
-      flex:1 1 320px; min-width:280px;
-      background:#0e1117; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.25);
-    }
-    .card h4{margin:0 0 8px; font-weight:700; font-size:15px; color:#dfe7ea}
-    .ayah-text, .user-text{
-      line-height:2.1; font-size:16px; color:#eaf1f4; word-wrap:break-word;
-    }
-    .legend{display:flex; gap:10px; font-size:12px; color:var(--muted)}
-    .tag{display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:12px; border:1px solid rgba(255,255,255,0.12)}
-    .tag.eq{background:rgba(21,182,106,0.18); color:#b7f5d8; border-color:rgba(21,182,106,0.32)}
-    .tag.sub{background:rgba(227,179,65,0.18); color:#ffe9b5; border-color:rgba(227,179,65,0.32)}
-    .tag.del{background:rgba(224,65,65,0.18); color:#ffc8c8; border-color:rgba(224,65,65,0.32)}
-    .tag.ins{background:rgba(62,160,232,0.18); color:#cbe8ff; border-color:rgba(62,160,232,0.32)}
 
-    .w.eq{background:rgba(21,182,106,0.18); border-bottom:2px solid rgba(21,182,106,0.65); border-radius:6px; padding:2px 4px; margin:0 2px;}
-    .w.sub{background:rgba(227,179,65,0.18); border-bottom:2px solid rgba(227,179,65,0.7); border-radius:6px; padding:2px 4px; margin:0 2px;}
-    .w.del{background:rgba(224,65,65,0.18); border-bottom:2px solid rgba(224,65,65,0.7); border-radius:6px; padding:2px 4px; margin:0 2px;}
-    .w.ins{background:rgba(62,160,232,0.18); border-bottom:2px solid rgba(62,160,232,0.7); border-radius:6px; padding:2px 4px; margin:0 2px;}
+    select {
+      width: 100%;
+      font-size: 11px;
+      padding: 4px;
+      background: #020617;
+      color: white;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+    }
 
-    .score{font-weight:700; color:#cfe9d9}
-    .small{font-size:12px; color:var(--muted)}
+    button {
+      width: 100%;
+      background: #0ea5e9;
+      border: none;
+      color: white;
+      padding: 8px;
+      font-size: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .progress-container,
+    .volume-container {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress,
+    .volume {
+      height: 100%;
+      width: 0%;
+      background: #22c55e;
+      border-radius: 10px;
+    }
+
+    .time {
+      font-size: 10px;
+      text-align: center;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
 
-  <div class="stage" id="stage">
-    <canvas id="particles"></canvas>
+<div class="quran-sidebar">
+  <div class="title">🎧 مشغل القرآن</div>
 
-    <!-- Screen overlays -->
-    <div class="screen green" id="screenGreen">
-      <div class="msg">
-        <div>
-          <div>جارٍ التسجيل …</div>
-          <div class="sub">تم إيقاف الحركات مؤقتًا. أمسك الميكروفون للتسجيل واسترجاع الآيات.</div>
-        </div>
-      </div>
-    </div>
-    <div class="screen red" id="screenRed">
-      <div class="msg">
-        <div>
-          <div>الرجاء تسجيل صوتك للاستماع إلى آياتك</div>
-          <div class="sub">لم يتم العثور على ميكروفون أو لم تُعطَ الإذن بالتسجيل.</div>
-        </div>
-      </div>
-    </div>
+  <select id="surahSelect"></select>
 
-    <!-- Emblem -->
-    <div class="emblem" id="emblem">
-      <div class="badge" id="badge" aria-label="Microphone emblem" role="button">
-        <div class="wing left"></div>
-        <div class="wing right"></div>
-        <div class="crest"></div>
-        <div class="plate"></div>
-        <div class="mic"></div>
-        <div class="halo" id="halo"></div>
-        <div class="title">الرجاء تسجيل صوتك للاستماع إلى آياتك</div>
-      </div>
-    </div>
+  <audio id="audio"></audio>
 
-    <!-- Controls -->
-    <div class="controls">
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <label for="surah" style="color:var(--muted); font-size:14px;">السورة:</label>
-        <select id="surah"></select>
-        <label for="ayah" style="color:var(--muted); font-size:14px;">الآية:</label>
-        <select id="ayah"></select>
-        <button id="playbackBtn" title="تشغيل التسجيل">تشغيل التسجيل</button>
-      </div>
+  <button id="playBtn">▶ تشغيل</button>
 
-      <div class="meter">
-        <span>مستوى الصوت:</span>
-        <div class="bar"><span id="level"></span></div>
-      </div>
-    </div>
-
-    <!-- Results -->
-    <div class="results" id="results" style="display:none;">
-      <div class="card">
-        <h4>الآية المختارة</h4>
-        <div class="ayah-text" id="refAyah"></div>
-        <div class="small" id="ayahMeta"></div>
-      </div>
-      <div class="card">
-        <h4>نصك المُسجّل</h4>
-        <div class="user-text" id="userAyah"></div>
-        <div class="legend">
-          <span class="tag eq">كلمات صحيحة</span>
-          <span class="tag sub">استبدال</span>
-          <span class="tag del">نقص</span>
-          <span class="tag ins">زيادة</span>
-        </div>
-        <div style="margin-top:8px;" class="score" id="score"></div>
-      </div>
-    </div>
+  <!-- شريط التقدم -->
+  <div class="progress-container" id="progressContainer">
+    <div class="progress" id="progress"></div>
   </div>
 
-  <div class="hint">اضغط واستمر على الشعار (اللمس أو الفأرة) لبدء التسجيل. ارفع يدك لإظهار النتائج والمقارنة.</div>
+  <div class="time" id="timeText">00:00</div>
 
-  <script>
-    // --- Minimal Ayah Database (Surah Al-Fatiha) ---
-    const AYAH_DB = {
-      "1": {
-        name: "الفاتحة",
-        ayat: [
-          "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-          "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
-          "الرَّحْمَٰنِ الرَّحِيمِ",
-          "مَالِكِ يَوْمِ الدِّينِ",
-          "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
-          "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
-          "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ"
-        ]
-      }
-    };
+  <!-- شريط الصوت -->
+  <div class="volume-container" id="volumeContainer">
+    <div class="volume" id="volumeBar"></div>
+  </div>
+</div>
 
-    // Populate surah and ayah selects
-    const surahSelect = document.getElementById('surah');
-    const ayahSelect = document.getElementById('ayah');
-    Object.entries(AYAH_DB).forEach(([id, s])=>{
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = `1. ${s.name}`;
-      surahSelect.appendChild(opt);
-    });
-    function refreshAyat(){
-      ayahSelect.innerHTML = "";
-      const s = AYAH_DB[surahSelect.value];
-      s.ayat.forEach((text, i)=>{
-        const opt = document.createElement('option');
-        opt.value = i+1;
-        opt.textContent = `${i+1}`;
-        ayahSelect.appendChild(opt);
-      });
-    }
-    surahSelect.addEventListener('change', refreshAyat);
-    refreshAyat();
+<script>
+  const surahNames = [
+    "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال",
+    "التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف",
+    "مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء",
+    "النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر",
+    "يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان",
+    "الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور",
+    "النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة",
+    "الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم",
+    "الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان",
+    "المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق",
+    "البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل",
+    "الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات",
+    "القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر",
+    "الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"
+  ];
 
-    // --- Particle system (canvas) ---
-    const canvas = document.getElementById('particles');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let rafId = null;
-    let fadeParticles = false;
-    function resizeCanvas(){
-      const rect = canvas.parentElement.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    function createParticles(n=160){
-      particles = [];
-      for(let i=0;i<n;i++){
-        particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.8 + 0.8, a: Math.random()*2*Math.PI, s: Math.random()*0.7 + 0.25, glow: Math.random()*0.6 + 0.4});
-      }
-    }
-    createParticles();
-    function drawParticles(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for(const p of particles){
-        p.x += Math.cos(p.a)*p.s; p.y += Math.sin(p.a)*p.s; p.a += (Math.random()-0.5)*0.08;
-        if(p.x<0) p.x = canvas.width; if(p.x>canvas.width) p.x = 0;
-        if(p.y<0) p.y = canvas.height; if(p.y>canvas.height) p.y = 0;
-        const badgeRect = document.getElementById('badge').getBoundingClientRect();
-        const canvasRect = canvas.getBoundingClientRect();
-        const micCx = (badgeRect.left + badgeRect.right)/2 - canvasRect.left;
-        const micCy = (badgeRect.top  + badgeRect.bottom)/2 - canvasRect.top;
-        const dx = p.x - micCx, dy = p.y - micCy;
-        const dist = Math.hypot(dx,dy);
-        const repelRadius = Math.min(canvas.width, canvas.height)*0.16;
-        if(dist < repelRadius){ const force = (repelRadius - dist)/repelRadius; p.x += (dx/dist || 0) * force*4.0; p.y += (dy/dist || 0) * force*4.0; p.r *= 0.98; } else { p.r = Math.min(p.r*1.02, 2.6); }
-        const alpha = fadeParticles ? 0.06 : (0.25 + p.glow*0.6);
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r*6);
-        grd.addColorStop(0, 'rgba(255,255,255,1)');
-        grd.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = grd;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-      }
-      rafId = requestAnimationFrame(drawParticles);
-    }
-    drawParticles();
+  const audio = document.getElementById("audio");
+  const select = document.getElementById("surahSelect");
+  const playBtn = document.getElementById("playBtn");
+  const progress = document.getElementById("progress");
+  const progressContainer = document.getElementById("progressContainer");
+  const timeText = document.getElementById("timeText");
+  const volumeBar = document.getElementById("volumeBar");
+  const volumeContainer = document.getElementById("volumeContainer");
 
-    // --- Recording + STT ---
-    const emblem = document.getElementById('emblem');
-    const halo = document.getElementById('halo');
-    const screenGreen = document.getElementById('screenGreen');
-    const screenRed   = document.getElementById('screenRed');
-    const badge = document.getElementById('badge');
-    const levelSpan = document.getElementById('level');
-    const playbackBtn = document.getElementById('playbackBtn');
-    const resultsEl = document.getElementById('results');
-    const refAyahEl = document.getElementById('refAyah');
-    const userAyahEl = document.getElementById('userAyah');
-    const scoreEl = document.getElementById('score');
-    const ayahMetaEl = document.getElementById('ayahMeta');
+  // تعبئة قائمة السور
+  for (let i = 1; i <= 114; i++) {
+    let num = i.toString().padStart(3, "0");
+    let option = document.createElement("option");
+    option.value = `https://download.quranicaudio.com/quran/abdul_basit_murattal/${num}.mp3`;
+    option.textContent = `سورة ${surahNames[i - 1]}`;
+    select.appendChild(option);
+  }
 
-    let holding = false;
-    let stream = null;
-    let mediaRecorder = null;
-    let chunks = [];
-    let audioCtx = null;
-    let analyser = null;
-    let dataArray = null;
+  audio.src = select.value;
 
-    // Speech recognition (Chrome)
-    let recognition = null;
-    let recognizing = false;
-    let transcriptBuffer = "";
+  select.addEventListener("change", () => {
+    audio.src = select.value;
+    audio.play();
+    playBtn.textContent = "⏸ إيقاف مؤقت";
+  });
 
-    function initRecognition(){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SR) return null;
-      const rec = new SR();
-      rec.lang = 'ar-SA';
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-      rec.onresult = (event)=>{
-        let interim = "";
-        for(let i=event.resultIndex; i<event.results.length; i++){
-          const res = event.results[i];
-          const t = res[0].transcript;
-          if(res.isFinal){ transcriptBuffer += " " + t; } else { interim += " " + t; }
-        }
-        // Optional: show interim somewhere if desired
-      };
-      rec.onerror = (e)=>{ /* fallback occurs on stop */ };
-      rec.onstart = ()=>{ recognizing = true; };
-      rec.onend = ()=>{ recognizing = false; };
-      return rec;
-    }
-
-    async function startRecording(){
-      try{
-        // Devices check
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasMic = devices.some(d => d.kind === 'audioinput');
-        if(!hasMic){ showRed(); return; }
-
-        stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioCtx.createMediaStreamSource(stream);
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
-        source.connect(analyser);
-
-        mediaRecorder = new MediaRecorder(stream);
-        chunks = [];
-        mediaRecorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-        mediaRecorder.start();
-
-        recognition = initRecognition();
-        transcriptBuffer = "";
-        if(recognition){ try{ recognition.start(); }catch{} }
-
-        showGreen();
-        monitorLevel();
-      }catch(err){
-        showRed();
-      }
-    }
-
-    function stopRecording(){
-      try{ mediaRecorder && mediaRecorder.state !== 'inactive' && mediaRecorder.stop(); }catch{}
-      try{ stream && stream.getTracks().forEach(t => t.stop()); }catch{}
-      try{ audioCtx && audioCtx.close(); }catch{}
-      try{ recognition && recognizing && recognition.stop(); }catch{}
-
-      stream = null; mediaRecorder = null; audioCtx = null; analyser = null; dataArray = null;
-
-      hideScreens();
-      emblem.classList.remove('fade');
-      halo.classList.remove('hide');
-      fadeParticles = false;
-
-      // Process results
-      const chosenSurahId = surahSelect.value;
-      const chosenAyahIndex = Number(ayahSelect.value) - 1;
-      const refText = AYAH_DB[chosenSurahId].ayat[chosenAyahIndex];
-      const userText = normalizeArabic(transcriptBuffer.trim());
-
-      if(!userText){
-        renderResults(refText, "لم يتم التقاط نص واضح.", [], 0, chosenSurahId, chosenAyahIndex);
-        return;
-      }
-
-      // Compare against selected ayah and also detect closest ayah in surah
-      const sAyat = AYAH_DB[chosenSurahId].ayat;
-      let best = {idx: chosenAyahIndex, score: -Infinity, ops: []};
-      for(let i=0;i<sAyat.length;i++){
-        const ops = diffArabic(refTokenize(sAyat[i]), refTokenize(userText));
-        const sc = scoreOps(ops);
-        if(sc > best.score){ best = {idx:i, score:sc, ops}; }
-      }
-      const bestRef = AYAH_DB[chosenSurahId].ayat[best.idx];
-      renderResults(bestRef, userText, best.ops, best.score, chosenSurahId, best.idx);
-    }
-
-    function monitorLevel(){
-      if(!analyser) return;
-      const tick = ()=>{
-        if(!analyser) return;
-        analyser.getByteTimeDomainData(dataArray);
-        let sum = 0;
-        for(let i=0;i<dataArray.length;i++){
-          const v = (dataArray[i]-128)/128;
-          sum += v*v;
-        }
-        const rms = Math.sqrt(sum / dataArray.length);
-        const pct = Math.min(100, Math.max(0, Math.round(rms*180)));
-        levelSpan.style.width = pct + '%';
-        requestAnimationFrame(tick);
-      };
-      tick();
-    }
-
-    function showGreen(){ screenRed.classList.remove('show'); screenGreen.classList.add('show'); emblem.classList.add('fade'); halo.classList.add('hide'); fadeParticles = true; }
-    function showRed(){ screenGreen.classList.remove('show'); screenRed.classList.add('show'); emblem.classList.remove('fade'); halo.classList.remove('hide'); fadeParticles = false; }
-    function hideScreens(){ screenGreen.classList.remove('show'); screenRed.classList.remove('show'); }
-
-    // Hold interactions
-    let holdTimer = null;
-    function beginHold(){ if(holding) return; holding = true; holdTimer = setTimeout(()=>{ startRecording(); }, 250); }
-    function endHold(){ clearTimeout(holdTimer); holdTimer = null; holding = false; stopRecording(); }
-    badge.addEventListener('mousedown', beginHold);
-    window.addEventListener('mouseup', endHold);
-    badge.addEventListener('touchstart', (e)=>{ e.preventDefault(); beginHold(); }, {passive:false});
-    window.addEventListener('touchend', (e)=>{ e.preventDefault(); endHold(); }, {passive:false});
-    window.addEventListener('touchcancel', endHold);
-
-    // Playback button
-    playbackBtn.addEventListener('click', ()=>{
-      if(!chunks || chunks.length===0){
-        playbackBtn.textContent = "لا يوجد تسجيل";
-        setTimeout(()=> playbackBtn.textContent = "تشغيل التسجيل", 1200);
-        return;
-      }
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+  playBtn.addEventListener("click", () => {
+    if (audio.paused) {
       audio.play();
-    });
-
-    // Select change for ayah metadata
-    surahSelect.addEventListener('change', ()=>{
-      refreshAyat();
-      updateMeta();
-    });
-    ayahSelect.addEventListener('change', updateMeta);
-    function updateMeta(){
-      const sName = AYAH_DB[surahSelect.value].name;
-      const aIdx = Number(ayahSelect.value);
-      ayahMetaEl.textContent = `السورة: ${sName} • الآية: ${aIdx}`;
+      playBtn.textContent = "⏸ إيقاف مؤقت";
+    } else {
+      audio.pause();
+      playBtn.textContent = "▶ تشغيل";
     }
-    updateMeta();
+  });
 
-    // --- Arabic normalization and diff ---
-    function normalizeArabic(text){
-      if(!text) return "";
-      // Remove diacritics and tatweel, unify alif/hamza/ya/ta marbuta, strip punctuation
-      return text
-        .replace(/[\u064B-\u065F\u0670]/g, '')       // Harakat & small alef
-        .replace(/\u0640/g, '')                      // Tatweel
-        .replace(/[^\u0621-\u063A\u0641-\u064A\s]/g, ' ') // Non-Arabic letters -> space
-        .replace(/[\u0622\u0623\u0625]/g, '\u0627')  // Alif forms -> Alif
-        .replace(/\u0629/g, '\u0647')                // Ta marbuta -> Ha (approx)
-        .replace(/\u0649/g, '\u064A')                // Alif Maqsura -> Ya
-        .replace(/\s+/g, ' ')                        // Collapse spaces
-        .trim();
-    }
-    function refTokenize(text){ return normalizeArabic(text).split(/\s+/).filter(Boolean); }
+  audio.addEventListener("timeupdate", () => {
+    if (!audio.duration) return;
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progress.style.width = percent + "%";
+    const min = Math.floor(audio.currentTime / 60);
+    const sec = Math.floor(audio.currentTime % 60);
+    timeText.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+  });
 
-    // Word-level diff (Wagner–Fischer)
-    function diffArabic(refWords, userWords){
-      const n = refWords.length, m = userWords.length;
-      const dp = Array.from({length:n+1}, ()=> Array(m+1).fill(0));
-      const bt = Array.from({length:n+1}, ()=> Array(m+1).fill(null));
-      for(let i=0;i<=n;i++){ dp[i][0] = i; bt[i][0] = 'del'; }
-      for(let j=0;j<=m;j++){ dp[0][j] = j; bt[0][j] = 'ins'; }
-      bt[0][0] = 'eq';
-      for(let i=1;i<=n;i++){
-        for(let j=1;j<=m;j++){
-          const costSub = refWords[i-1] === userWords[j-1] ? 0 : 1;
-          const a = dp[i-1][j] + 1;      // delete ref[i-1]
-          const b = dp[i][j-1] + 1;      // insert user[j-1]
-          const c = dp[i-1][j-1] + costSub; // substitute
-          const min = Math.min(a,b,c);
-          dp[i][j] = min;
-          bt[i][j] = (min === c) ? (costSub===0 ? 'eq' : 'sub') : (min === a ? 'del' : 'ins');
-        }
-      }
-      // Backtrack to ops
-      const ops = [];
-      let i = n, j = m;
-      while(i>0 || j>0){
-        const op = bt[i][j];
-        if(op === 'eq' || op === 'sub'){
-          ops.push({type: op, ref: i>0 ? refWords[i-1] : "", user: j>0 ? userWords[j-1] : ""});
-          i--; j--;
-        } else if(op === 'del'){
-          ops.push({type: 'del', ref: refWords[i-1], user: ""});
-          i--;
-        } else if(op === 'ins'){
-          ops.push({type: 'ins', ref: "", user: userWords[j-1]});
-          j--;
-        } else {
-          break;
-        }
-      }
-      ops.reverse();
-      return ops;
-    }
+  progressContainer.addEventListener("click", (e) => {
+    const width = progressContainer.clientWidth;
+    const clickX = e.offsetX;
+    audio.currentTime = (clickX / width) * audio.duration;
+  });
 
-    function scoreOps(ops){
-      // Simple scoring: eq=+2, sub=-1, del=-2, ins=-1, normalized by (eq+sub+del) length
-      let score = 0, totalRef = 0;
-      for(const o of ops){
-        if(o.type === 'eq'){ score += 2; totalRef++; }
-        else if(o.type === 'sub'){ score -= 1; totalRef++; }
-        else if(o.type === 'del'){ score -= 2; totalRef++; }
-        else if(o.type === 'ins'){ score -= 1; }
-      }
-      return totalRef === 0 ? 0 : score / (totalRef*2); // range approx [-1,1]
-    }
+  volumeContainer.addEventListener("click", (e) => {
+    const width = volumeContainer.clientWidth;
+    const clickX = e.offsetX;
+    const vol = clickX / width;
+    audio.volume = vol;
+    volumeBar.style.width = (vol * 100) + "%";
+  });
 
-    function renderResults(refText, userText, ops, score, surahId, ayahIdx){
-      // Reference ayah styled by ops mapping for alignment
-      const refWords = refTokenize(refText);
-      const userWords = refTokenize(userText);
-      const refSpan = [];
-      const userSpan = [];
-      for(const o of ops){
-        if(o.type === 'eq'){
-          refSpan.push(`<span class="w eq">${o.ref}</span>`);
-          userSpan.push(`<span class="w eq">${o.user}</span>`);
-        }else if(o.type === 'sub'){
-          refSpan.push(`<span class="w sub">${o.ref}</span>`);
-          userSpan.push(`<span class="w sub">${o.user}</span>`);
-        }else if(o.type === 'del'){
-          refSpan.push(`<span class="w del">${o.ref}</span>`);
-        }else if(o.type === 'ins'){
-          userSpan.push(`<span class="w ins">${o.user}</span>`);
-        }
-      }
-      refAyahEl.innerHTML = refSpan.join(' ');
-      userAyahEl.innerHTML = userSpan.join(' ') || "—";
-      const pct = Math.max(0, Math.min(100, Math.round((score+1)*50))); // map [-1,1] to [0,100]
-      scoreEl.textContent = `الدقة التقريبية: ${pct}%`;
-      ayahMetaEl.textContent = `السورة: ${AYAH_DB[surahId].name} • الآية: ${ayahIdx+1}`;
-      resultsEl.style.display = 'flex';
-    }
-  </script>
+  audio.volume = 0.7;
+  volumeBar.style.width = "70%";
+</script>
+
 </body>
 </html>
